@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enviar Datos al Servidor</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 20px;
+        }
+        textarea {
+            width: 80%;
+            min-height: 150px;
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #respuesta {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Ingresar Información</h1>
+    <textarea id="textoIngresado" placeholder="Ingrese el texto aquí"></textarea>
+    <button id="enviarBtn">Enviar al Servidor</button>
+    <div id="respuesta"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const enviarBtn = document.getElementById('enviarBtn');
+            const textoIngresado = document.getElementById('textoIngresado');
+            const respuestaDiv = document.getElementById('respuesta');
+
+            enviarBtn.addEventListener('click', () => {
+                const texto = textoIngresado.value;
+
+                fetch('http://localhost:5000/ingresar', { // Define la ruta en tu servidor Express
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ texto: texto })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    respuestaDiv.textContent = 'Datos enviados correctamente.';
+                })
+                .catch(error => {
+                    respuestaDiv.textContent = 'Error al enviar los datos al servidor.';
+                });
+            });
+        });
+    </script>
+</body>
+</html>
