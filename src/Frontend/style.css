@@ -1,0 +1,84 @@
+body {
+    font-family: 'Courier New', Courier, monospace;
+    background-color: #f0f0f0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+}
+
+.container {
+    background-color: #ddd;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.title {
+    font-size: 2.5em;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.bomb-container {
+    font-size: 1.5em;
+    margin-bottom: 20px;
+}
+
+.bomb {
+    margin: 0 10px;
+    color: #ff4d4d;
+    text-shadow: 1px 1px #333;
+}
+
+.upload-area {
+    margin-bottom: 20px;
+}
+
+.custom-file-upload {
+    border: 1px solid #ccc;
+    display: inline-block;
+    padding: 10px 20px;
+    cursor: pointer;
+    background-color: #eee;
+    color: #333;
+    border-radius: 5px;
+}
+
+#file-upload {
+    display: none;
+}
+
+#game-board {
+    display: grid;
+    grid-template-columns: repeat(4, 50px);
+    grid-template-rows: repeat(4, 50px);
+    gap: 5px;
+    margin-top: 20px;
+}
+
+.cell {
+    width: 50px;
+    height: 50px;
+    background-color: #bbb;
+    border: 2px solid #999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.2em;
+    cursor: pointer;
+    user-select: none;
+}
+
+.cell.bomb {
+    background-color: #ff4d4d;
+    color: white;
+}
+
+.cell.revealed {
+    background-color: #eee;
+    border-color: #ccc;
+    color: #333;
+}

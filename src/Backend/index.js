@@ -1,79 +1,66 @@
-const express = require("express");
-const cors = require("cors");
-const morgan = require('morgan');
-const { SerialPort } = require('serialport');
-
-
+const express = require('express');
+const multer = require('multer');
+const fs = require('fs');
 const app = express();
-const PORT = 5000;
-/*
-const serialPortPath = ''; // Reemplazar con serial de Arduino
+const port = 3000;
 
-const serialPort = new SerialPort({
-    path: serialPortPath,
-    baudRate: 9600, // Reemplazar la velocidad con la configuración de Arduino
-  });
+// Configuración de multer para manejar la subida de archivos
+const upload = multer({ dest: 'uploads/' });
 
-  // Abre el puerto serial
-serialPort.open((err) => {
+// Middleware para permitir CORS (necesario para que el frontend se comunique con el servidor)
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  next();
+});
+
+// Ruta para recibir el archivo y procesar las bombas
+app.post('/ingresar', upload.single('file'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No se subió ningún archivo' });
+  }
+
+  // Leer el archivo subido
+  const filePath = req.file.path;
+  fs.readFile(filePath, 'utf8', (err, data) => {
     if (err) {
-      return console.log('Error al abrir el puerto serial:', err.message);
+      return res.status(500).json({ error: 'Error al leer el archivo' });
     }
-    console.log('Puerto serial abierto correctamente');
-  });
-*/
 
-app.use(morgan('dev')); // para poder visualizar los estados de nuestro servidor
-app.use(cors());
-app.use(express.json());
+    // Procesar el contenido del archivo
+    const lines = data.split('\n');
+    const bombs = [];
 
-app.get('/', (req, res) => {
-    res.send('Home Page');
-  });
-  //Ruta para enviar datos al Arduino
-/*app.get('/enviar/:dato', (req, res) => {
-    const datoEnviar = req.params.dato;
-    serialPort.write(datoEnviar + '\n', (err) => {
-      if (err) {
-        return res.status(500).send('Error al enviar datos por el puerto serial: ' + err.message);
+    for (let line of lines) {
+      line = line.trim();
+      // Ignorar comentarios y líneas vacías
+      if (line.startsWith('//') || line === '' || line === 'conf_ini' || line === 'conf_fin') {
+        continue;
       }
-      console.log('Dato enviado al Arduino:', datoEnviar);
-      res.send('Dato enviado al Arduino: ' + datoEnviar);
+
+      // Buscar líneas que comiencen con "ADD"
+      if (line.startsWith('ADD')) {
+        const parts = line.split(/[\s,:]+/);
+        const x = parseInt(parts[2]);
+        const y = parseInt(parts[4]);
+        // Validar coordenadas para un tablero 4x4
+        if (x >= 0 && x < 4 && y >= 0 && y < 4) {
+          bombs.push({ x, y });
+        }
+      }
+    }
+
+    // Eliminar el archivo temporal
+    fs.unlink(filePath, (err) => {
+      if (err) console.error('Error al eliminar el archivo temporal:', err);
     });
+
+    // Enviar las posiciones de las bombas al frontend
+    res.json({ bombs });
   });
-
-// Define una forma de leer datos desde el Arduino
-serialPort.on('data', (data) => {
-  console.log('Datos recibidos del Arduino:', data.toString());
-  // Aquí podrías procesar los datos recibidos y, por ejemplo, enviarlos a través de websockets a un cliente web.
 });
 
-// Maneja errores del puerto serial
-serialPort.on('error', (err) => {
-  console.error('Error en el puerto serial:', err);
+// Iniciar el servidor
+app.listen(port, () => {
+  console.log(`Servidor corriendo en http://localhost:${port}`);
 });
-
-  */
-
-app.post("/ingresar", (req, res) => {
-    console.log(req.body.texto);
-    const texto = req.body.texto;
-    
-    texto.split("\n").forEach((dato) => {
-        console.log(dato);
-        
-        // serialPort.write(dato + '\n', (err) => {
-        //   if (err) {
-        //     return console.log('Error al enviar datos por el puerto serial:', err.message);
-        //   }
-        //   console.log('Dato enviado al Arduino:', dato);
-        // });
-      });
-    res.send("Datos recibidos correctamente:");  
-});
-
-
-app.listen(PORT, () => {
-    console.log(`Servidor escuchando en http://localhost:${PORT}`);
-  });
-  

@@ -1,0 +1,9 @@
+// Esto es un comentario
+conf_ini
+
+ADD x: 3, y: 4 
+ADD x: 1, y: 2
+ADD x: 2, y: 4
+ADD x: 4, y: 4 // este se debería de rechazar por coordenada
+
+conf:fin

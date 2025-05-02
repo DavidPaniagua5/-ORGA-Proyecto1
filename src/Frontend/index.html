@@ -1,73 +1,275 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enviar Datos al Servidor</title>
-    <style>
-        body {
-            font-family: sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding-top: 20px;
-        }
-        textarea {
-            width: 80%;
-            min-height: 150px;
-            margin-bottom: 10px;
-            padding: 10px;
-            border: 1px solid #ccc;
-            box-sizing: border-box;
-        }
-        button {
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            cursor: pointer;
-            border-radius: 5px;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        #respuesta {
-            margin-top: 20px;
-            font-weight: bold;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Buscaminas Retro</title>
+  <style>
+    body {
+      background: #1a1a1a;
+      font-family: 'Courier New', monospace;
+      color: #0f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      overflow: hidden;
+      background-image: url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23222222" fill-opacity="0.4"%3E%3Cpath d="M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30v4h-4v2h4v4h2v-4h4v-2h-4V0h-2zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 0v4H0v2h4v4h2V6h4V4H6V0H4z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');
+    }
+    .container {
+      text-align: center;
+      position: relative;
+      z-index: 1;
+    }
+    h1 {
+      font-size: 4rem;
+      text-shadow: 0 0 10px #0f0, 0 0 20px #0f0;
+      margin-bottom: 20px;
+      animation: flicker 1.5s infinite alternate;
+    }
+    @keyframes flicker {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.8; }
+    }
+    .bomb {
+      position: absolute;
+      font-size: 2rem;
+      animation: spin 10s linear infinite;
+    }
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
+    }
+    #bomb1 { top: -50px; left: -100px; }
+    #bomb2 { top: -80px; right: -120px; }
+    #bomb3 { bottom: -60px; left: -90px; }
+    #bomb4 { bottom: -70px; right: -110px; }
+    #file-input {
+      display: none;
+    }
+    .upload-btn, .reset-btn {
+      background: #333;
+      border: 2px solid #0f0;
+      color: #0f0;
+      padding: 15px 30px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      border-radius: 5px;
+      transition: all 0.3s;
+      box-shadow: 0 0 10px #0f0;
+      margin: 10px;
+    }
+    .upload-btn:hover, .reset-btn:hover {
+      background: #0f0;
+      color: #000;
+      box-shadow: 0 0 20px #0f0;
+    }
+    #game-board {
+      display: none;
+      margin-top: 20px;
+      background: #222;
+      padding: 20px;
+      border: 2px solid #0f0;
+      box-shadow: 0 0 15px #0f0;
+    }
+    .board {
+      display: grid;
+      grid-template-columns: repeat(4, 60px);
+      gap: 5px;
+      background: #111;
+      padding: 10px;
+    }
+    .cell {
+      width: 60px;
+      height: 60px;
+      background: #333;
+      border: 2px solid #0f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.5rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .cell:hover {
+      background: #444;
+    }
+    .cell.revealed {
+      background: #555;
+      cursor: default;
+    }
+    .cell.bomb {
+      background: #f00;
+      color: #000;
+    }
+    .cell.bomb.detonated {
+      animation: explode 0.5s forwards;
+    }
+    @keyframes explode {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.5); background: #ff5555; }
+      100% { transform: scale(1); background: #f00; }
+    }
+  </style>
 </head>
 <body>
-    <h1>Ingresar Información</h1>
-    <textarea id="textoIngresado" placeholder="Ingrese el texto aquí"></textarea>
-    <button id="enviarBtn">Enviar al Servidor</button>
-    <div id="respuesta"></div>
+  <div class="container">
+    <h1>Buscaminas</h1>
+    <div class="bomb" id="bomb1">💣</div>
+    <div class="bomb" id="bomb2">💣</div>
+    <div class="bomb" id="bomb3">💣</div>
+    <div class="bomb" id="bomb4">💣</div>
+    <label for="file-input" class="upload-btn">Antes de iniciar, carga un archivo para configurar bombas</label>
+    <input type="file" id="file-input" accept=".txt">
+    <div id="game-board">
+      <div class="board" id="board"></div>
+      <button class="reset-btn" id="reset-btn">Reiniciar Juego</button>
+    </div>
+  </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const enviarBtn = document.getElementById('enviarBtn');
-            const textoIngresado = document.getElementById('textoIngresado');
-            const respuestaDiv = document.getElementById('respuesta');
+  <script>
+    const fileInput = document.getElementById('file-input');
+    const gameBoard = document.getElementById('game-board');
+    const board = document.getElementById('board');
+    const resetBtn = document.getElementById('reset-btn');
+    let bombs = [];
+    let cells = [];
 
-            enviarBtn.addEventListener('click', () => {
-                const texto = textoIngresado.value;
+    fileInput.addEventListener('change', async (event) => {
+      const file = event.target.files[0];
+      if (file) {
+        const formData = new FormData();
+        formData.append('file', file);
 
-                fetch('http://localhost:5000/ingresar', { // Define la ruta en tu servidor Express
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ texto: texto })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    respuestaDiv.textContent = 'Datos enviados correctamente.';
-                })
-                .catch(error => {
-                    respuestaDiv.textContent = 'Error al enviar los datos al servidor.';
-                });
-            });
+        try {
+          const response = await fetch('http://localhost:3000/ingresar', {
+            method: 'POST',
+            body: formData
+          });
+          if (response.ok) {
+            const data = await response.json();
+            bombs = data.bombs; // Guardar las posiciones de las bombas
+            console.log('Bombas recibidas:', bombs); // Para depuración
+            initGame();
+          } else {
+            alert('Error al enviar el archivo');
+          }
+        } catch (error) {
+          alert('Error de conexión con el servidor');
+        }
+      }
+    });
+
+    resetBtn.addEventListener('click', () => {
+      gameBoard.style.display = 'none';
+      board.innerHTML = ''; // Limpiar el tablero
+      bombs = []; // Limpiar las bombas
+      cells = []; // Limpiar las celdas
+      fileInput.value = ''; // Limpiar el input de archivo
+    });
+
+    function initGame() {
+      gameBoard.style.display = 'block';
+      board.innerHTML = '';
+      cells = [];
+
+      // Crear el tablero 4x4
+      for (let i = 0; i < 16; i++) {
+        const cell = document.createElement('div');
+        cell.classList.add('cell');
+        const x = i % 4;
+        const y = Math.floor(i / 4);
+        cell.dataset.x = x;
+        cell.dataset.y = y;
+        cell.addEventListener('click', () => revealCell(cell));
+        board.appendChild(cell);
+        cells.push(cell);
+      }
+
+      // Marcar las celdas que contienen bombas desde el inicio
+      bombs.forEach(bomb => {
+        const index = bomb.y * 4 + bomb.x;
+        if (cells[index]) {
+          cells[index].dataset.isBomb = 'true';
+        }
+      });
+
+      // Calcular números para las celdas (cuántas bombas hay alrededor)
+      cells.forEach(cell => {
+        const x = parseInt(cell.dataset.x);
+        const y = parseInt(cell.dataset.y);
+        let bombCount = 0;
+
+        // Revisar las 8 celdas vecinas
+        for (let dx = -1; dx <= 1; dx++) {
+          for (let dy = -1; dy <= 1; dy++) {
+            if (dx === 0 && dy === 0) continue;
+            const nx = x + dx;
+            const ny = y + dy;
+            if (nx >= 0 && nx < 4 && ny >= 0 && ny < 4) {
+              if (bombs.some(bomb => bomb.x === nx && bomb.y === ny)) {
+                bombCount++;
+              }
+            }
+          }
+        }
+        cell.dataset.bombCount = bombCount;
+      });
+    }
+
+    function revealCell(cell) {
+      if (cell.classList.contains('revealed')) return;
+
+      cell.classList.add('revealed');
+      const x = parseInt(cell.dataset.x);
+      const y = parseInt(cell.dataset.y);
+
+      // Verificar si es una bomba
+      const isBomb = cell.dataset.isBomb === 'true';
+      if (isBomb) {
+        // Resaltar la bomba que detonó
+        cell.classList.add('bomb', 'detonated');
+        cell.textContent = '💣';
+        // Mostrar todas las bombas en el tablero
+        cells.forEach(c => {
+          if (c.dataset.isBomb === 'true' && !c.classList.contains('detonated')) {
+            c.classList.add('revealed', 'bomb');
+            c.textContent = '💣';
+          }
         });
-    </script>
+        setTimeout(() => {
+          alert('¡Perdiste! Has encontrado una bomba.');
+          resetBtn.click(); // Reiniciar el juego
+        }, 500);
+      } else {
+        const bombCount = parseInt(cell.dataset.bombCount);
+        cell.textContent = bombCount > 0 ? bombCount : '';
+        if (bombCount === 0) {
+          // Revelar celdas vecinas si no hay bombas alrededor
+          for (let dx = -1; dx <= 1; dx++) {
+            for (let dy = -1; dy <= 1; dy++) {
+              if (dx === 0 && dy === 0) continue;
+              const nx = x + dx;
+              const ny = y + dy;
+              if (nx >= 0 && nx < 4 && ny >= 0 && ny < 4) {
+                const neighbor = board.children[ny * 4 + nx];
+                revealCell(neighbor);
+              }
+            }
+          }
+        }
+      }
+
+      // Verificar si el jugador ganó
+      const revealedCells = Array.from(board.children).filter(cell => cell.classList.contains('revealed'));
+      const nonBombCells = 16 - bombs.length;
+      if (revealedCells.length === nonBombCells) {
+        setTimeout(() => {
+          alert('¡Ganaste! Has evitado todas las bombas.');
+          resetBtn.click(); // Reiniciar el juego
+        }, 500);
+      }
+    }
+  </script>
 </body>
 </html>
